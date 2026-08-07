@@ -33,9 +33,13 @@ export const WelcomeView = ({
       <section className="bg-background flex flex-col items-center justify-center text-center">
         <WelcomeImage />
 
-        <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-          Chat live with your voice AI agent
-        </p>
+       <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
+         Meet ShikshaMitra AI
+       </p>
+
+       <p className="text-muted-foreground max-w-md pt-2 text-sm">
+  Your personal AI voice tutor. Learn Python, improve spoken English, master Maths, Science, and technology through natural voice conversations.
+</p>
 
         <Button
           size="lg"
