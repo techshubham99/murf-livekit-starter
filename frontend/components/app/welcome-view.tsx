@@ -33,12 +33,18 @@ export const WelcomeView = ({
       <section className="bg-background flex flex-col items-center justify-center text-center">
         <WelcomeImage />
 
-       <p className="text-foreground max-w-prose pt-1 leading-6 font-medium">
-         Meet ShikshaMitra AI
-       </p>
+       <h1 className="text-4xl font-bold text-center">
+        🎓 ShikshaMitra AI
+      </h1>
 
-       <p className="text-muted-foreground max-w-md pt-2 text-sm">
-  Your personal AI voice tutor. Learn Python, improve spoken English, master Maths, Science, and technology through natural voice conversations.
+      <p className="text-muted-foreground max-w-md pt-3 text-center text-base leading-7">
+  Your Personal AI Learning Assistant
+  <br />
+  Learn Python, Spoken English,
+  <br />
+  Mathematics, Science and Technology
+  <br />
+  through natural voice conversations.
 </p>
 
         <Button
@@ -52,7 +58,8 @@ export const WelcomeView = ({
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
         <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
-          Need help getting set up? Check out the{' '}
+  🎙 Powered by Murf Falcon • VoiceForBharat Edition
+</p>
           <a
             target="_blank"
             rel="noopener noreferrer"
@@ -62,7 +69,7 @@ export const WelcomeView = ({
             Voice AI quickstart
           </a>
           .
-        </p>
+       
       </div>
     </div>
   );
