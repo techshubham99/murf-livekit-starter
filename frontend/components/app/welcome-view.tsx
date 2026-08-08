@@ -1,22 +1,6 @@
+import type { ComponentProps } from 'react';
+import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { Button } from '@/components/ui/button';
-
-function WelcomeImage() {
-  return (
-    <svg
-      width="64"
-      height="64"
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="text-fg0 mb-4 size-16"
-    >
-      <path
-        d="M15 24V40C15 40.7957 14.6839 41.5587 14.1213 42.1213C13.5587 42.6839 12.7956 43 12 43C11.2044 43 10.4413 42.6839 9.87868 42.1213C9.31607 41.5587 9 40.7957 9 40V24C9 23.2044 9.31607 22.4413 9.87868 21.8787C10.4413 21.3161 11.2044 21 12 21C12.7956 21 13.5587 21.3161 14.1213 21.8787C14.6839 22.4413 15 23.2044 15 24ZM22 5C21.2044 5 20.4413 5.31607 19.8787 5.87868C19.3161 6.44129 19 7.20435 19 8V56C19 56.7957 19.3161 57.5587 19.8787 58.1213C20.4413 58.6839 21.2044 59 22 59C22.7956 59 23.5587 58.6839 24.1213 58.1213C24.6839 57.5587 25 56.7957 25 56V8C25 7.20435 24.6839 6.44129 24.1213 5.87868C23.5587 5.31607 22.7956 5 22 5ZM32 13C31.2044 13 30.4413 13.3161 29.8787 13.8787C29.3161 14.4413 29 15.2044 29 16V48C29 48.7957 29.3161 49.5587 29.8787 50.1213C30.4413 50.6839 31.2044 51 32 51C32.7956 51 33.5587 50.6839 34.1213 50.1213C34.6839 49.5587 35 48.7957 35 48V16C35 15.2044 34.6839 14.4413 34.1213 13.8787C33.5587 13.3161 32.7956 13 32 13ZM42 21C41.2043 21 40.4413 21.3161 39.8787 21.8787C39.3161 22.4413 39 23.2044 39 24V40C39 40.7957 39.3161 41.5587 39.8787 42.1213C40.4413 42.6839 41.2043 43 42 43C42.7957 43 43.5587 42.6839 44.1213 42.1213C44.6839 41.5587 45 40.7957 45 40V24C45 23.2044 44.6839 22.4413 44.1213 21.8787C43.5587 21.3161 42.7957 21 42 21ZM52 17C51.2043 17 50.4413 17.3161 49.8787 17.8787C49.3161 18.4413 49 19.2044 49 20V44C49 44.7957 49.3161 45.5587 49.8787 46.1213C50.4413 46.6839 51.2043 47 52 47C52.7957 47 53.5587 46.6839 54.1213 46.1213C54.6839 45.5587 55 44.7957 55 44V20C55 19.2044 54.6839 18.4413 54.1213 17.8787C53.5587 17.3161 52.7957 17 52 17Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
 interface WelcomeViewProps {
   startButtonText: string;
@@ -27,50 +11,137 @@ export const WelcomeView = ({
   startButtonText,
   onStartCall,
   ref,
-}: React.ComponentProps<'div'> & WelcomeViewProps) => {
+}: ComponentProps<'div'> & WelcomeViewProps) => {
   return (
-    <div ref={ref}>
-      <section className="bg-background flex flex-col items-center justify-center text-center">
-        <WelcomeImage />
+    <div ref={ref} className="education-shell relative flex h-full min-h-0 w-full flex-col overflow-hidden text-white">
+      <div className="hero-focus-circle hero-focus-circle-left" />
+      <div className="hero-focus-circle hero-focus-circle-right" />
+      <nav className="relative z-20 mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3 rounded-[28px] border border-white/10 bg-slate-950/75 px-4 py-4 shadow-[0_24px_80px_rgba(10,18,58,.24)] backdrop-blur-xl sm:px-6 lg:px-8 flex-shrink-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white/10 p-1 shadow-[0_10px_30px_rgba(15,23,42,.18)] backdrop-blur-xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/shikshamitra-logo.png"
+              alt="ShikshaMitra AI logo"
+              className="max-h-full max-w-full object-contain"
+            />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold text-white sm:text-lg">
+              ShikshaMitra AI
+            </p>
+            <p className="hidden text-[10px] tracking-[.22em] text-cyan-200/70 uppercase sm:block">
+              LEARN · UNDERSTAND · GROW
+            </p>
+          </div>
+        </div>
 
-       <h1 className="text-4xl font-bold text-center">
-        🎓 ShikshaMitra AI
-      </h1>
+        <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
+            <a href="#home" className="transition hover:text-white">
+              Home
+            </a>
+            <a href="#features" className="transition hover:text-white">
+              Features
+            </a>
+            <a href="#subjects" className="transition hover:text-white">
+              Subjects
+            </a>
+            <a href="#about" className="transition hover:text-white">
+              About
+            </a>
+          </div>
 
-      <p className="text-muted-foreground max-w-md pt-3 text-center text-base leading-7">
-  Your Personal AI Learning Assistant
-  <br />
-  Learn Python, Spoken English,
-  <br />
-  Mathematics, Science and Technology
-  <br />
-  through natural voice conversations.
-</p>
+          <details className="md:hidden">
+            <summary className="flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-4 py-2 text-sm font-semibold text-slate-200 shadow-[0_10px_30px_rgba(15,23,42,.24)]">
+              Menu
+            </summary>
+            <div className="mt-3 space-y-2 rounded-[24px] border border-white/10 bg-slate-950/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,.28)]">
+              <a
+                href="#home"
+                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
+              >
+                Home
+              </a>
+              <a
+                href="#features"
+                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
+              >
+                Features
+              </a>
+              <a
+                href="#subjects"
+                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
+              >
+                Subjects
+              </a>
+              <a
+                href="#about"
+                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
+              >
+                About
+              </a>
+            </div>
+          </details>
 
-        <Button
-          size="lg"
-          onClick={onStartCall}
-          className="mt-6 w-64 rounded-full font-mono text-xs font-bold tracking-wider uppercase"
-        >
-          {startButtonText}
-        </Button>
-      </section>
+          <div className="rounded-full border border-cyan-300/15 bg-slate-950/75 px-3 py-2 text-[10px] font-semibold tracking-[.16em] text-cyan-100 uppercase shadow-[0_0_30px_rgba(34,211,238,.12)] backdrop-blur-md md:flex">
+            <span className="pulse-dot inline-block" />
+            BUILT WITH MURF FALCON
+          </div>
+        </div>
+      </nav>
 
-      <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
-        <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
-  🎙 Powered by Murf Falcon • VoiceForBharat Edition
-</p>
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://docs.livekit.io/agents/start/voice-ai/"
-            className="underline"
+      <main className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[720px] flex-1 flex-col items-center justify-center px-4 py-6 text-center sm:px-6 sm:py-8 lg:px-8">
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <div className="hero-pill mb-4 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[.08] px-4 py-2 text-xs font-semibold tracking-[.2em] text-cyan-100 uppercase shadow-[0_16px_60px_rgba(34,211,238,.14)] backdrop-blur-md">
+            <MicrophoneIcon weight="fill" className="h-4 w-4 text-cyan-300" />
+            <span className="hidden items-center gap-2 sm:inline-flex">
+              <span>VOICE AI TUTOR</span>
+              <span className="waveform inline-flex items-center gap-1">
+                <span className="wave" />
+                <span className="wave" />
+                <span className="wave" />
+                <span className="wave" />
+                <span className="wave" />
+              </span>
+            </span>
+            <span className="sm:hidden">VOICE AI TUTOR</span>
+          </div>
+
+          <h1 className="max-w-2xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.95] font-bold tracking-[-0.05em] text-white sm:text-[clamp(3rem,5vw,5rem)]">
+            ShikshaMitra <span className="ai-gradient">AI</span>
+          </h1>
+
+          <p className="mt-4 text-lg font-medium text-indigo-100 sm:text-xl">
+            Your Personal AI Learning Assistant
+          </p>
+
+          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
+            Learn <span className="text-cyan-200">Python</span>,{' '}
+            <span className="text-violet-200">Spoken English</span>,{' '}
+            <span className="text-indigo-200">Mathematics</span>,{' '}
+            <span className="text-cyan-200">Science</span> and{' '}
+            <span className="text-violet-200">Technology</span> through natural voice conversations.
+          </p>
+
+          <Button
+            size="lg"
+            onClick={onStartCall}
+            className="group mt-8 flex w-full max-w-[320px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 via-indigo-500 to-cyan-500 px-8 py-3 text-sm font-bold text-white shadow-[0_24px_90px_rgba(99,102,241,.24)] transition duration-200 hover:scale-[1.02] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b1028] active:scale-[0.98]"
           >
-            Voice AI quickstart
-          </a>
-          .
-       
-      </div>
+            <MicrophoneIcon
+              weight="fill"
+              className="h-5 w-5 transition-transform duration-200 group-hover:-rotate-6"
+            />
+            {startButtonText}
+          </Button>
+
+          <p className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400 sm:text-sm">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-cyan-400" />
+            Safe · Smart · Supportive
+          </p>
+        </div>
+      </main>
     </div>
   );
 };
