@@ -8,11 +8,15 @@ from livekit.agents import (
     AgentSession,
     JobContext,
     JobProcess,
+    RunContext,
     cli,
+    function_tool,
     inference,
     tokenize,
     room_io,
 )
+from .database import initialize_database
+from .memory import lookup_user_memory, save_user_memory
 from livekit.plugins import murf, silero, google, deepgram, noise_cancellation
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
@@ -58,6 +62,22 @@ You do NOT provide:
 - Personal student records
 - Confidential exam papers
 - Real-time exam questions
+
+PERSISTENT MEMORY
+
+This agent has two tools available:
+- lookup_user_memory()
+- save_user_memory(name, language_preference, learning_level, current_topic, topics_covered)
+
+Use these tools to recall the learner's preferences, previous topics, and learning progress.
+Only save memory when the user explicitly agrees and after you ask for consent in a clear, friendly way.
+Do not store sensitive personal details, exam answers, or confidential information.
+
+If this is a returning learner, start with a warm personalized greeting such as:
+"Welcome back, <name>! Last time you were learning <topic>. Would you like to continue?"
+
+If no memory exists, say you can remember their name and learning progress for future sessions, then ask:
+"I can remember your name and learning progress for future sessions. Would you like me to remember that?"
 
 LANGUAGE
 
@@ -106,8 +126,42 @@ When the conversation starts, greet the user like this:
 """
 
 class Assistant(Agent):
-    def __init__(self) -> None:
-        super().__init__(instructions=SYSTEM_PROMPT)
+    def __init__(self, user_id: str, prior_memory: str | None = None) -> None:
+        self.user_id = user_id
+        instructions = SYSTEM_PROMPT
+        if prior_memory:
+            instructions = f"{SYSTEM_PROMPT}\n\n{prior_memory}"
+        super().__init__(instructions=instructions)
+
+    @function_tool
+    async def lookup_user_memory(self, context: RunContext):
+        """Lookup persistent memory for the learner associated with this session."""
+        return lookup_user_memory(self.user_id)
+
+    @function_tool
+    async def save_user_memory(
+        self,
+        context: RunContext,
+        name: str | None = None,
+        language_preference: str | None = None,
+        learning_level: str | None = None,
+        current_topic: str | None = None,
+        topics_covered: list[str] | None = None,
+    ):
+        """Save learner memory only after the user explicitly agrees."""
+        facts: dict[str, object] = {}
+        if learning_level is not None:
+            facts["learning_level"] = learning_level
+        if current_topic is not None:
+            facts["current_topic"] = current_topic
+        if topics_covered is not None:
+            facts["topics_covered"] = topics_covered
+        return save_user_memory(
+            self.user_id,
+            name,
+            language_preference,
+            facts,
+        )
 
     # To add tools, use the @function_tool decorator.
     # Here's an example that adds a simple weather tool.
@@ -131,6 +185,7 @@ server = AgentServer()
 
 
 def prewarm(proc: JobProcess):
+    initialize_database()
     proc.userdata["vad"] = silero.VAD.load()
 
 
@@ -144,6 +199,41 @@ async def my_agent(ctx: JobContext):
     ctx.log_context_fields = {
         "room": ctx.room.name,
     }
+
+    await ctx.connect()
+    participant = await ctx.wait_for_participant()
+    learner_id = participant.identity
+    memory_record = lookup_user_memory(learner_id)
+    prior_memory = None
+    if isinstance(memory_record, dict) and memory_record.get("facts"):
+        facts = memory_record.get("facts", {})
+        name = memory_record.get("name") or "learner"
+        topic = facts.get("current_topic") or "your recent topic"
+        topics = ", ".join(facts.get("topics_covered", [])) if isinstance(facts.get("topics_covered"), list) else None
+        memory_lines = [
+            f"Previous learner name: {name}.",
+            f"Previous preferred language: {memory_record.get('language_preference')}.",
+        ]
+        if learning_level := facts.get("learning_level"):
+            memory_lines.append(f"Learning level: {learning_level}.")
+        if topic:
+            memory_lines.append(f"Last topic: {topic}.")
+        if topics:
+            memory_lines.append(f"Previously covered topics: {topics}.")
+        memory_summary = " ".join(memory_lines)
+        prior_memory = (
+            "A returning learner has joined this session. "
+            "Greet them naturally and use their memory to continue the lesson. "
+            f"If the learner is {name}, say: \"Welcome back, {name}! Last time you were learning {topic}. Would you like to continue?\" "
+            f"Use the stored facts: {memory_summary}"
+        )
+    else:
+        prior_memory = (
+            "No prior learning memory exists for this learner. "
+            "If they agree, ask explicitly: \"I can remember your name and learning progress for future sessions. Would you like me to remember that?\""
+        )
+
+    assistant = Assistant(learner_id, prior_memory)
 
     # Set up a voice AI pipeline using Murf Falcon, Gemini, Deepgram, and the LiveKit turn detector
     session = AgentSession(
@@ -195,7 +285,7 @@ async def my_agent(ctx: JobContext):
 
     # Start the session, which initializes the voice pipeline and warms up the models
     await session.start(
-        agent=Assistant(),
+        agent=assistant,
         room=ctx.room,
         room_options=room_io.RoomOptions(
             audio_input=room_io.AudioInputOptions(
@@ -208,9 +298,6 @@ async def my_agent(ctx: JobContext):
             ),
         ),
     )
-
-    # Join the room and connect to the user
-    await ctx.connect()
 
 
 if __name__ == "__main__":

@@ -14,6 +14,25 @@ export interface SandboxConfig {
     | null;
 }
 
+const USER_ID_STORAGE_KEY = 'shikshamitra_user_id';
+
+export function getPersistentUserId() {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  let userId = window.localStorage.getItem(USER_ID_STORAGE_KEY);
+  if (userId && userId.trim().length > 0) {
+    return userId;
+  }
+
+  userId = typeof crypto?.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `shikshamitra_user_${Math.random().toString(36).slice(2, 12)}`;
+  window.localStorage.setItem(USER_ID_STORAGE_KEY, userId);
+  return userId;
+}
+
 /**
  * Get the app configuration
  * @param headers - The headers of the request
@@ -104,6 +123,7 @@ export function getSandboxTokenSource(appConfig: AppConfig) {
           agents: [{ agent_name: appConfig.agentName }],
         }
       : undefined;
+    const userId = getPersistentUserId();
 
     try {
       const res = await fetch(url.toString(), {
@@ -114,6 +134,35 @@ export function getSandboxTokenSource(appConfig: AppConfig) {
         },
         body: JSON.stringify({
           room_config: roomConfig,
+          user_id: userId,
+        }),
+      });
+      return await res.json();
+    } catch (error) {
+      console.error('Error fetching connection details:', error);
+      throw new Error('Error fetching connection details!');
+    }
+  });
+}
+
+export function getLiveKitTokenSource(appConfig: AppConfig) {
+  return TokenSource.custom(async () => {
+    const roomConfig = appConfig.agentName
+      ? {
+          agents: [{ agent_name: appConfig.agentName }],
+        }
+      : undefined;
+    const userId = getPersistentUserId();
+
+    try {
+      const res = await fetch('/api/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          room_config: roomConfig,
+          user_id: userId,
         }),
       });
       return await res.json();
