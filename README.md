@@ -34,6 +34,19 @@ flowchart LR
     style F fill:#444441,stroke:#888780,color:#fff
 ```
 
+## Day 5 — Adding Learning Tools
+
+The ShikshaMitra AI backend now includes Day 5 learning tools for practice and answer scoring.
+
+- `fetch_next_exercise` selects a local, curated exercise based on the learner's level and topic.
+- `score_spoken_answer` evaluates a spoken response for correctness and gives short feedback.
+
+The exercise dataset is local and curated in `backend/data/exercises.json`; it is not a live external data source.
+
+Day 5 also uses the existing Day 4 learner memory to personalize practice. If a returning learner has `learning_level` and `current_topic` saved, the agent will use that information automatically when the learner asks for a question or practice.
+
+---
+
 ---
 
 ## Quickstart

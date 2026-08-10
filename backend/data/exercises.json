@@ -1,0 +1,121 @@
+[
+  {
+    "id": 1,
+    "level": "beginner",
+    "topic": "python variables",
+    "question": "What is a variable in Python?",
+    "expected_answer": "A variable is used to store a value."
+  },
+  {
+    "id": 2,
+    "level": "beginner",
+    "topic": "python loops",
+    "question": "What does a for loop do in Python?",
+    "expected_answer": "A for loop repeats a block of code for each item in a sequence."
+  },
+  {
+    "id": 3,
+    "level": "beginner",
+    "topic": "python functions",
+    "question": "What is a function in Python?",
+    "expected_answer": "A function is a reusable block of code that performs a task."
+  },
+  {
+    "id": 4,
+    "level": "beginner",
+    "topic": "mathematics addition",
+    "question": "What is 7 plus 5?",
+    "expected_answer": "7 plus 5 equals 12."
+  },
+  {
+    "id": 5,
+    "level": "beginner",
+    "topic": "mathematics subtraction",
+    "question": "What is 10 minus 4?",
+    "expected_answer": "10 minus 4 equals 6."
+  },
+  {
+    "id": 6,
+    "level": "beginner",
+    "topic": "english grammar nouns",
+    "question": "What is a noun?",
+    "expected_answer": "A noun is a word that names a person, place, thing, or idea."
+  },
+  {
+    "id": 7,
+    "level": "beginner",
+    "topic": "english grammar verbs",
+    "question": "What is a verb?",
+    "expected_answer": "A verb is a word that shows action or a state of being."
+  },
+  {
+    "id": 8,
+    "level": "beginner",
+    "topic": "vocabulary synonym",
+    "question": "What is a synonym for happy?",
+    "expected_answer": "A synonym for happy is joyful."
+  },
+  {
+    "id": 9,
+    "level": "beginner",
+    "topic": "computer science binary",
+    "question": "How many values can a single binary digit represent?",
+    "expected_answer": "A single binary digit can represent two values: 0 and 1."
+  },
+  {
+    "id": 10,
+    "level": "beginner",
+    "topic": "computer science hardware",
+    "question": "What does CPU stand for?",
+    "expected_answer": "CPU stands for Central Processing Unit."
+  },
+  {
+    "id": 11,
+    "level": "intermediate",
+    "topic": "python lists",
+    "question": "How do you add an item to a Python list?",
+    "expected_answer": "Use the append method, for example list.append(item)."
+  },
+  {
+    "id": 12,
+    "level": "intermediate",
+    "topic": "mathematics multiplication",
+    "question": "What is 8 times 6?",
+    "expected_answer": "8 times 6 equals 48."
+  },
+  {
+    "id": 13,
+    "level": "intermediate",
+    "topic": "english grammar tenses",
+    "question": "What is the past tense form of the verb 'go'?",
+    "expected_answer": "The past tense form of go is went."
+  },
+  {
+    "id": 14,
+    "level": "intermediate",
+    "topic": "vocabulary antonym",
+    "question": "What is an antonym for small?",
+    "expected_answer": "An antonym for small is large."
+  },
+  {
+    "id": 15,
+    "level": "intermediate",
+    "topic": "computer science algorithm",
+    "question": "What is an algorithm?",
+    "expected_answer": "An algorithm is a step-by-step method for solving a problem."
+  },
+  {
+    "id": 16,
+    "level": "intermediate",
+    "topic": "python dictionaries",
+    "question": "What is a dictionary in Python?",
+    "expected_answer": "A dictionary is a collection of key-value pairs."
+  },
+  {
+    "id": 17,
+    "level": "intermediate",
+    "topic": "mathematics division",
+    "question": "What is 20 divided by 4?",
+    "expected_answer": "20 divided by 4 equals 5."
+  }
+]
