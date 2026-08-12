@@ -28,6 +28,10 @@ from livekit.plugins import (
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 from .database import initialize_database
+from .escalation import (
+    create_escalation_record,
+    initialize_escalation_table,
+)
 from .memory import lookup_user_memory, save_user_memory
 from .tools import (
     find_next_exercise,
@@ -441,6 +445,99 @@ Help the learner understand concepts instead.
 
 
 ============================================================
+HUMAN HELP POLICY — DAY 7
+============================================================
+
+ShikshaMitra should consider requesting human teacher help when:
+
+1. The learner is clearly upset, frustrated, or struggling and
+   teacher support would be genuinely useful.
+
+   Examples:
+   - "मुझे कुछ समझ नहीं आ रहा।"
+   - "मैं बहुत परेशान हो गया हूँ।"
+   - "I don't understand this."
+   - "I'm getting really frustrated."
+
+2. The learner explicitly asks for a teacher.
+
+   Examples:
+   - "मुझे शिक्षक से बात करनी है।"
+   - "Can I talk to a teacher?"
+   - "मुझे टीचर की मदद चाहिए।"
+
+Before creating an escalation:
+
+- Acknowledge the learner's difficulty.
+- Explain why teacher help may be useful.
+- Tell the learner what information will be shared
+  (a short summary of the problem, nothing private).
+- Ask for explicit permission.
+
+Consent rules:
+
+- Only create escalation when the learner clearly says YES.
+- Silence is NOT consent.
+- "Maybe" is NOT consent.
+- If unclear, ask again.
+- If the learner says NO, do NOT create any escalation.
+  Continue helping normally.
+
+After a successful escalation:
+
+- Give the reference ID to the learner.
+- Tell the learner the request status is OPEN.
+- Explain the honest next step.
+- NEVER promise immediate teacher response unless the system
+  actually guarantees it.
+
+Normal learning questions must NEVER trigger an escalation.
+
+"Python में loop क्या होता है?" → answer normally, no escalation.
+"Give me a Python question." → continue practice, no escalation.
+
+
+============================================================
+ESCALATION CONSENT LANGUAGE
+============================================================
+
+The consent message MUST follow the learner's language.
+
+Hindi:
+"मैं आपकी समस्या का एक छोटा सा सारांश शिक्षक के साथ साझा
+करके मदद का अनुरोध भेज सकता हूँ। क्या मैं ऐसा करूं?"
+
+English:
+"I can share a short summary of your problem with a teacher
+and request help. Would you like me to do that?"
+
+Hinglish:
+"मैं आपकी problem का एक short summary teacher के साथ share
+करके help request भेज सकता हूँ। क्या मैं ऐसा करूं?"
+
+The confirmation message must also follow the language:
+
+Hindi:
+"आपका शिक्षक-सहायता अनुरोध बना दिया गया है। आपका reference
+ID है ESC-XXXXXX।"
+
+English:
+"Your teacher-help request has been created. Your reference ID
+is ESC-XXXXXX."
+
+If the learner says NO:
+
+Hindi:
+"ठीक है। मैं आपकी जानकारी साझा नहीं करूंगा और कोई
+teacher-help request नहीं बनाऊंगा। मैं यहीं आपकी मदद करने
+की कोशिश करता हूँ।"
+
+English:
+"Okay. I won't share your information or create a teacher-help
+request. Let me continue helping you here."
+
+
+============================================================
 FIRST GREETING
 ============================================================
 
@@ -757,6 +854,95 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
                 ),
             }
 
+    # ========================================================
+    # CREATE ESCALATION — DAY 7
+    # ========================================================
+
+    @function_tool
+    async def create_escalation(
+        self,
+        context: RunContext,
+        reason: str,
+        summary: str,
+        already_checked: str = "",
+        urgency: str = "MEDIUM",
+        language: str = "English",
+        preferred_follow_up: str = "voice",
+        learner_name: str | None = None,
+    ):
+        """
+        Create a human teacher help request.
+
+        Only call this tool AFTER the learner has given
+        explicit consent to share their information.
+
+        Parameters:
+            reason: Why human help is needed
+                    (e.g. "Frustrated Learner" or "Teacher Help")
+            summary: Short summary of the learner's problem
+            already_checked: What ShikshaMitra already tried
+            urgency: LOW, MEDIUM, or HIGH
+            language: Hindi, English, or Hinglish
+            preferred_follow_up: voice, text, or dashboard
+            learner_name: Name of learner if available
+        """
+
+        logger.info("[ESCALATION] Human help needed")
+        logger.info("[ESCALATION] Reason: %s", reason)
+        logger.info("[ESCALATION] Language detected: %s", language)
+        logger.info("[ESCALATION] Consent requested")
+        logger.info("[ESCALATION] Consent granted")
+        logger.info("[ESCALATION] Creating request")
+
+        try:
+            result = create_escalation_record(
+                learner_id=self.user_id,
+                reason=reason,
+                summary=summary,
+                already_checked=already_checked,
+                urgency=urgency,
+                language=language,
+                preferred_follow_up=preferred_follow_up,
+                learner_name=learner_name,
+            )
+
+            if result.get("success"):
+                if result.get("duplicate"):
+                    logger.info("[ESCALATION] Duplicate found")
+                    logger.info(
+                        "[ESCALATION] Returning existing request %s",
+                        result.get("reference_id"),
+                    )
+                else:
+                    logger.info(
+                        "[ESCALATION] Created %s",
+                        result.get("reference_id"),
+                    )
+                    logger.info(
+                        "[ESCALATION] Status: %s",
+                        result.get("status"),
+                    )
+                    logger.info("[ESCALATION] Dashboard persistence successful")
+            else:
+                logger.warning(
+                    "[ESCALATION] Failed to create request"
+                )
+
+            return result
+
+        except Exception:
+            logger.exception(
+                "[ESCALATION] Escalation creation failed"
+            )
+            return {
+                "success": False,
+                "message": (
+                    "I couldn't create the teacher help "
+                    "request right now. Let me try to "
+                    "help you myself."
+                ),
+            }
+
 
 # ============================================================
 # SERVER
@@ -772,6 +958,7 @@ server = AgentServer()
 def prewarm(proc: JobProcess):
 
     initialize_database()
+    initialize_escalation_table()
 
     proc.userdata["vad"] = (
         silero.VAD.load()
@@ -1002,9 +1189,10 @@ async def my_agent(
 
     session = AgentSession(
 
-        # Speech-to-text (Nova-3 with auto language detection)
+        # Speech-to-text (Nova-3 multilingual)
         stt=deepgram.STT(
             model="nova-3",
+            language="multi",
         ),
 
         # LLM

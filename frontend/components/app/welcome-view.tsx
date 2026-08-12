@@ -1,5 +1,5 @@
-import type { ComponentProps } from 'react';
-import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
+import { useState, useEffect, type ComponentProps } from 'react';
+import { MicrophoneIcon, GradCapIcon } from '@phosphor-icons/react/dist/ssr';
 import { Button } from '@/components/ui/button';
 
 interface WelcomeViewProps {
@@ -12,6 +12,40 @@ export const WelcomeView = ({
   onStartCall,
   ref,
 }: ComponentProps<'div'> & WelcomeViewProps) => {
+  const [openCount, setOpenCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchOpenCount() {
+      try {
+        let res = await fetch('/api/escalations');
+        if (!res.ok) {
+          res = await fetch('http://localhost:8765/api/escalations');
+        }
+        if (res.ok) {
+          const data = await res.json();
+          const items = data.requests || data.escalations || [];
+          const count = items.filter(
+            (r: any) => (r.status || 'OPEN').toUpperCase() === 'OPEN'
+          ).length;
+          if (isMounted) {
+            setOpenCount(count);
+          }
+        }
+      } catch (err) {
+        // Fallback silently if server is not active
+      }
+    }
+
+    fetchOpenCount();
+    const interval = setInterval(fetchOpenCount, 8000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <div ref={ref} className="education-shell relative flex h-full min-h-0 w-full flex-col overflow-hidden text-white">
       <div className="hero-focus-circle hero-focus-circle-left" />
@@ -50,6 +84,20 @@ export const WelcomeView = ({
             <a href="#about" className="transition hover:text-white">
               About
             </a>
+            <a
+              href="/dashboard.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View learner requests that need human/teacher support"
+              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-950/70 px-3.5 py-1.5 text-xs font-semibold text-indigo-100 transition hover:border-indigo-400/60 hover:bg-indigo-900/90 hover:text-white"
+            >
+              <span>🎓 Teacher Help</span>
+              {openCount !== null && (
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-300 border border-amber-500/30">
+                  {openCount}
+                </span>
+              )}
+            </a>
           </div>
 
           <details className="md:hidden">
@@ -81,6 +129,20 @@ export const WelcomeView = ({
               >
                 About
               </a>
+              <a
+                href="/dashboard.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="View learner requests that need human/teacher support"
+                className="flex items-center justify-between rounded-2xl bg-indigo-950/60 px-3 py-2.5 text-sm font-medium text-indigo-200 transition hover:bg-indigo-900/80"
+              >
+                <span>🎓 Teacher Help Requests</span>
+                {openCount !== null && (
+                  <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-300 border border-amber-500/30">
+                    {openCount} Open
+                  </span>
+                )}
+              </a>
             </div>
           </details>
 
@@ -91,7 +153,7 @@ export const WelcomeView = ({
         </div>
       </nav>
 
-      <main className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[720px] flex-1 flex-col items-center justify-center px-4 py-6 text-center sm:px-6 sm:py-8 lg:px-8">
+      <main className="relative z-10 mx-auto flex h-full min-h-0 w-full max-w-[800px] flex-1 flex-col items-center justify-center px-4 py-6 text-center sm:px-6 sm:py-8 lg:px-8">
         <div className="flex flex-1 flex-col items-center justify-center text-center">
           <div className="hero-pill mb-4 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[.08] px-4 py-2 text-xs font-semibold tracking-[.2em] text-cyan-100 uppercase shadow-[0_16px_60px_rgba(34,211,238,.14)] backdrop-blur-md">
             <MicrophoneIcon weight="fill" className="h-4 w-4 text-cyan-300" />
@@ -136,7 +198,7 @@ export const WelcomeView = ({
             {startButtonText}
           </Button>
 
-          <p className="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400 sm:text-sm">
+          <p className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 sm:text-sm">
             <span className="inline-flex h-2.5 w-2.5 rounded-full bg-cyan-400" />
             Safe · Smart · Supportive
           </p>
@@ -145,3 +207,4 @@ export const WelcomeView = ({
     </div>
   );
 };
+
