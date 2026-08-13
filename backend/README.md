@@ -64,6 +64,23 @@ uv run python src/agent.py console
 uv run python src/agent.py start
 ```
 
+### Call Analytics dashboard
+
+Call Analytics is served by the existing dashboard server on port `8765` and
+reads real voice-session records from `data/shikshamitra.db`. Starting the
+agent launches it automatically. To run or verify the dashboard API on its
+own, use a separate terminal:
+
+```bash
+cd backend
+uv run python src/dashboard.py
+```
+
+Then start the frontend from `frontend` with `pnpm dev`. Its
+`/api/call-analytics` route proxies to `CALL_ANALYTICS_BACKEND_URL`
+(`http://localhost:8765` by default). If the dashboard is unavailable, the
+route returns a clear `503` response; it never substitutes fake metrics.
+
 ## Configuration
 
 All configuration lives in [`src/agent.py`](src/agent.py).

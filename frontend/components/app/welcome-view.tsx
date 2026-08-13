@@ -1,5 +1,5 @@
-import { useState, useEffect, type ComponentProps } from 'react';
-import { MicrophoneIcon, GradCapIcon } from '@phosphor-icons/react/dist/ssr';
+import { type ComponentProps, useEffect, useState } from 'react';
+import { MicrophoneIcon } from '@phosphor-icons/react/dist/ssr';
 import { Button } from '@/components/ui/button';
 
 interface WelcomeViewProps {
@@ -27,13 +27,13 @@ export const WelcomeView = ({
           const data = await res.json();
           const items = data.requests || data.escalations || [];
           const count = items.filter(
-            (r: any) => (r.status || 'OPEN').toUpperCase() === 'OPEN'
+            (r: { status?: string }) => (r.status || 'OPEN').toUpperCase() === 'OPEN'
           ).length;
           if (isMounted) {
             setOpenCount(count);
           }
         }
-      } catch (err) {
+      } catch {
         // Fallback silently if server is not active
       }
     }
@@ -47,12 +47,16 @@ export const WelcomeView = ({
   }, []);
 
   return (
-    <div ref={ref} className="education-shell relative flex h-full min-h-0 w-full flex-col overflow-hidden text-white">
+    <div
+      ref={ref}
+      className="education-shell relative flex h-full min-h-0 w-full flex-col overflow-hidden text-white"
+    >
       <div className="hero-focus-circle hero-focus-circle-left" />
       <div className="hero-focus-circle hero-focus-circle-right" />
-      <nav className="relative z-20 mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3 rounded-[28px] border border-white/10 bg-slate-950/75 px-4 py-4 shadow-[0_24px_80px_rgba(10,18,58,.24)] backdrop-blur-xl sm:px-6 lg:px-8 flex-shrink-0">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white/10 p-1 shadow-[0_10px_30px_rgba(15,23,42,.18)] backdrop-blur-xl">
+      <nav className="relative z-20 mx-auto mt-4 flex w-full max-w-[1400px] flex-shrink-0 items-center justify-between gap-6 px-6 py-4 sm:mt-6 sm:px-8">
+        {/* LEFT: Branding */}
+        <div className="flex min-w-0 items-center gap-3.5">
+          <span className="flex h-[50px] w-[50px] flex-shrink-0 items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/shikshamitra-logo.png"
@@ -61,95 +65,89 @@ export const WelcomeView = ({
             />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-white sm:text-lg">
+            <p className="truncate text-base font-bold tracking-tight text-white sm:text-lg">
               ShikshaMitra AI
             </p>
-            <p className="hidden text-[10px] tracking-[.22em] text-cyan-200/70 uppercase sm:block">
+            <p className="hidden text-[10px] font-semibold tracking-[.2em] text-cyan-300 uppercase sm:block">
               LEARN · UNDERSTAND · GROW
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-            <a href="#home" className="transition hover:text-white">
-              Home
-            </a>
-            <a href="#features" className="transition hover:text-white">
-              Features
-            </a>
-            <a href="#subjects" className="transition hover:text-white">
-              Subjects
-            </a>
-            <a href="#about" className="transition hover:text-white">
-              About
-            </a>
+        {/* RIGHT: Action Buttons & Tech Badge */}
+        <div className="flex items-center gap-4 sm:gap-5">
+          <div className="hidden items-center gap-4 md:flex">
+            {/* Teacher Help Button */}
             <a
               href="/dashboard.html"
               target="_blank"
               rel="noopener noreferrer"
               title="View learner requests that need human/teacher support"
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-950/70 px-3.5 py-1.5 text-xs font-semibold text-indigo-100 transition hover:border-indigo-400/60 hover:bg-indigo-900/90 hover:text-white"
+              className="inline-flex h-[36px] items-center justify-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/5 px-3.5 py-2 text-[14px] font-medium text-purple-200 transition duration-200 hover:border-purple-400/50 hover:bg-purple-500/10 hover:text-purple-100"
             >
               <span>🎓 Teacher Help</span>
               {openCount !== null && (
-                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] font-bold text-amber-300 border border-amber-500/30">
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full border border-purple-400/40 bg-purple-600/20 px-1 text-[11px] font-bold text-purple-300">
                   {openCount}
                 </span>
               )}
             </a>
+
+            {/* Call Analytics Button */}
+            <a
+              href="/call-analytics.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View Day 8 call performance and exercise completion analytics"
+              className="inline-flex h-[36px] items-center justify-center gap-1.5 rounded-full border border-cyan-400/20 bg-cyan-500/5 px-3.5 py-2 text-[14px] font-medium text-cyan-200 transition duration-200 hover:border-cyan-400/40 hover:bg-cyan-500/10 hover:text-cyan-100"
+            >
+              <span>📊 Call Analytics</span>
+            </a>
           </div>
 
+          {/* BUILT WITH MURF FALCON Tech Badge */}
+          <div className="hidden h-[36px] items-center justify-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/5 px-3.5 text-[12px] font-bold tracking-[.15em] text-cyan-200 uppercase lg:flex">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+            <span>BUILT WITH MURF FALCON</span>
+          </div>
+
+          {/* Mobile Menu */}
           <details className="md:hidden">
-            <summary className="flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-4 py-2 text-sm font-semibold text-slate-200 shadow-[0_10px_30px_rgba(15,23,42,.24)]">
+            <summary className="flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-slate-950/80 px-3.5 py-1.5 text-xs font-semibold text-slate-200 shadow-[0_10px_30px_rgba(15,23,42,.24)]">
               Menu
             </summary>
-            <div className="mt-3 space-y-2 rounded-[24px] border border-white/10 bg-slate-950/95 p-4 shadow-[0_20px_60px_rgba(15,23,42,.28)]">
-              <a
-                href="#home"
-                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
-              >
-                Home
-              </a>
-              <a
-                href="#features"
-                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
-              >
-                Features
-              </a>
-              <a
-                href="#subjects"
-                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
-              >
-                Subjects
-              </a>
-              <a
-                href="#about"
-                className="block rounded-2xl px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5"
-              >
-                About
-              </a>
+            <div className="mt-3 space-y-2 rounded-[24px] border border-white/10 bg-slate-950/95 p-3.5 shadow-[0_20px_60px_rgba(15,23,42,.28)]">
               <a
                 href="/dashboard.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 title="View learner requests that need human/teacher support"
-                className="flex items-center justify-between rounded-2xl bg-indigo-950/60 px-3 py-2.5 text-sm font-medium text-indigo-200 transition hover:bg-indigo-900/80"
+                className="flex items-center justify-between rounded-2xl border border-purple-500/30 bg-purple-950/50 px-3 py-2 text-[13px] font-semibold text-purple-100 transition hover:bg-purple-900/70"
               >
-                <span>🎓 Teacher Help Requests</span>
+                <span>🎓 Teacher Help</span>
                 {openCount !== null && (
-                  <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-300 border border-amber-500/30">
-                    {openCount} Open
+                  <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                    {openCount}
                   </span>
                 )}
               </a>
+              <a
+                href="/call-analytics.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="View Day 8 call performance and exercise completion analytics"
+                className="flex items-center justify-between rounded-2xl border border-indigo-500/20 bg-slate-900/70 px-3 py-2 text-[13px] font-medium text-slate-200 transition hover:bg-slate-800/80"
+              >
+                <span>📊 Call Analytics</span>
+              </a>
+              <div className="flex items-center justify-center pt-1.5">
+                <div className="inline-flex h-[32px] items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-950/40 px-3 text-[11px] font-bold tracking-[.2em] text-cyan-200/90 uppercase">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
+                  <span>BUILT WITH MURF FALCON</span>
+                </div>
+              </div>
             </div>
           </details>
-
-          <div className="rounded-full border border-cyan-300/15 bg-slate-950/75 px-3 py-2 text-[10px] font-semibold tracking-[.16em] text-cyan-100 uppercase shadow-[0_0_30px_rgba(34,211,238,.12)] backdrop-blur-md md:flex">
-            <span className="pulse-dot inline-block" />
-            BUILT WITH MURF FALCON
-          </div>
         </div>
       </nav>
 
@@ -207,4 +205,3 @@ export const WelcomeView = ({
     </div>
   );
 };
-

@@ -22,10 +22,10 @@ import json
 import logging
 import os
 import sys
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from threading import Thread
 
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Ensure backend root is in sys.path when executed directly
@@ -35,13 +35,17 @@ if str(backend_root) not in sys.path:
 
 load_dotenv(backend_root / ".env.local")
 
+from src.call_analytics import (
+    get_analytics_summary,
+    get_recent_calls,
+    initialize_call_analytics_table,
+)
 from src.database import initialize_database
 from src.escalation import (
     get_all_escalations,
     initialize_escalation_table,
     update_escalation_status,
 )
-
 
 # ============================================================
 # LOGGING
@@ -60,6 +64,7 @@ logger = logging.getLogger("dashboard")
 # ============================================================
 
 DASHBOARD_HTML_PATH = Path(__file__).resolve().parent / "dashboard.html"
+CALL_ANALYTICS_HTML_PATH = Path(__file__).resolve().parent / "call-analytics.html"
 
 DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", "8765"))
 
@@ -102,7 +107,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
     # --------------------------------------------------------
 
     def do_GET(self) -> None:
-        path = self.path.rstrip("/")
+        raw_path = urlparse(self.path).path
+        path = raw_path.rstrip("/")
 
         # Dashboard HTML
         if path == "" or path == "/":
@@ -110,24 +116,48 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 html = DASHBOARD_HTML_PATH.read_bytes()
                 self._send_html(html)
             except FileNotFoundError:
-                self._send_html(
-                    b"<h1>Dashboard HTML not found</h1>", 500
-                )
+                self._send_html(b"<h1>Dashboard HTML not found</h1>", 500)
             return
 
-        # Escalation list API
+        # Day 8 — Call Analytics HTML
+        if path == "/call-analytics" or path == "/call-analytics.html":
+            try:
+                html = CALL_ANALYTICS_HTML_PATH.read_bytes()
+                self._send_html(html)
+            except FileNotFoundError:
+                self._send_html(b"<h1>Call Analytics HTML not found</h1>", 500)
+            return
+
+        # Escalation list API (Day 7)
         if path == "/api/escalations":
             try:
                 escalations = get_all_escalations()
-                self._send_json({
-                    "requests": escalations,
-                    "escalations": escalations,
-                })
+                self._send_json(
+                    {
+                        "requests": escalations,
+                        "escalations": escalations,
+                    }
+                )
             except Exception as exc:
                 logger.exception("Failed to fetch escalations")
+                self._send_json({"error": str(exc)}, 500)
+            return
+
+        # Call Analytics API (Day 8)
+        if path == "/api/call-analytics":
+            try:
+                summary = get_analytics_summary()
+                recent_calls = get_recent_calls(limit=20)
                 self._send_json(
-                    {"error": str(exc)}, 500
+                    {
+                        "summary": summary,
+                        "recent_calls": recent_calls,
+                        **summary,
+                    }
                 )
+            except Exception as exc:
+                logger.exception("Failed to fetch call analytics")
+                self._send_json({"error": str(exc)}, 500)
             return
 
         self._send_json({"error": "Not found"}, 404)
@@ -137,7 +167,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
     # --------------------------------------------------------
 
     def do_POST(self) -> None:
-        path = self.path.rstrip("/")
+        raw_path = urlparse(self.path).path
+        path = raw_path.rstrip("/")
 
         # Update escalation status
         # POST /api/escalations/<reference_id>/status
@@ -147,22 +178,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if len(parts) == 5:
                 reference_id = parts[3]
                 try:
-                    content_length = int(
-                        self.headers.get("Content-Length", 0)
-                    )
+                    content_length = int(self.headers.get("Content-Length", 0))
                     body = self.rfile.read(content_length)
                     data = json.loads(body) if body else {}
                     new_status = data.get("status", "")
 
-                    result = update_escalation_status(
-                        reference_id, new_status
-                    )
+                    result = update_escalation_status(reference_id, new_status)
                     self._send_json(result)
                 except Exception as exc:
                     logger.exception("Failed to update status")
-                    self._send_json(
-                        {"success": False, "error": str(exc)}, 500
-                    )
+                    self._send_json({"success": False, "error": str(exc)}, 500)
                 return
 
         self._send_json({"error": "Not found"}, 404)
@@ -190,14 +215,24 @@ def run_dashboard(port: int = DASHBOARD_PORT) -> None:
     # Initialize database tables
     initialize_database()
     initialize_escalation_table()
+    initialize_call_analytics_table()
 
-    server = HTTPServer(("0.0.0.0", port), DashboardHandler)
+    try:
+        server = HTTPServer(("0.0.0.0", port), DashboardHandler)
+    except OSError as exc:
+        logger.warning(
+            "Dashboard server on port %d already running or port unavailable: %s",
+            port,
+            exc,
+        )
+        return
 
     logger.info("=" * 60)
-    logger.info("  ShikshaMitra AI – Human Help Dashboard")
+    logger.info("  ShikshaMitra AI – Human Help & Analytics Dashboard")
     logger.info("=" * 60)
     logger.info("  URL: http://localhost:%d", port)
-    logger.info("  API: http://localhost:%d/api/escalations", port)
+    logger.info("  Escalations API: http://localhost:%d/api/escalations", port)
+    logger.info("  Call Analytics API: http://localhost:%d/api/call-analytics", port)
     logger.info("=" * 60)
 
     try:

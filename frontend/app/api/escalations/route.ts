@@ -32,6 +32,9 @@ export async function GET() {
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0' },
     });
   } catch (err: any) {
-    return NextResponse.json({ requests: [], escalations: [], error: String(err) }, { status: 500 });
+    return NextResponse.json(
+      { requests: [], escalations: [], error: String(err) },
+      { status: 500 }
+    );
   }
 }

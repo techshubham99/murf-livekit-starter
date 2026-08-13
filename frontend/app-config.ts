@@ -33,16 +33,16 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName:"ShikshaMitra AI",
-  pageTitle:"Meet ShikshaMitra AI",
-  pageDescription: "Your Personal AI Voice Tutor",
+  companyName: 'ShikshaMitra AI',
+  pageTitle: 'Meet ShikshaMitra AI',
+  pageDescription: 'Your Personal AI Voice Tutor',
 
   supportsChatInput: true,
   supportsVideoInput: true,
   supportsScreenShare: true,
   isPreConnectBufferEnabled: true,
 
-  logo:  '/shikshamitra-logo.png',
+  logo: '/shikshamitra-logo.png',
   accent: '#6366F1',
   logoDark: '/shikshamitra-logo.png',
   accentDark: '#818cf8',

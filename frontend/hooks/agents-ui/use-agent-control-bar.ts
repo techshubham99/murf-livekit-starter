@@ -74,18 +74,18 @@ export function useInputControls({
   } = useSessionContext();
 
   const microphoneToggle = useTrackToggle({
-  source: Track.Source.Microphone,
-  onDeviceError: (error) => {
-    alert(
-      "🎤 Microphone permission is required.\n\nPlease allow microphone access from your browser settings and refresh the page."
-    );
+    source: Track.Source.Microphone,
+    onDeviceError: (error) => {
+      alert(
+        '🎤 Microphone permission is required.\n\nPlease allow microphone access from your browser settings and refresh the page.'
+      );
 
-    onDeviceError?.({
-      source: Track.Source.Microphone,
-      error,
-    });
-  },
-});
+      onDeviceError?.({
+        source: Track.Source.Microphone,
+        error,
+      });
+    },
+  });
 
   const cameraToggle = useTrackToggle({
     source: Track.Source.Camera,
@@ -149,18 +149,18 @@ export function useInputControls({
     [cameraToggle, screenShareToggle]
   );
   const handleMicrophoneDeviceSelectError = useCallback(
-  (error: Error) => {
-    alert(
-      "🎤 Microphone permission denied.\n\nPlease enable microphone access in your browser settings and reload the page."
-    );
+    (error: Error) => {
+      alert(
+        '🎤 Microphone permission denied.\n\nPlease enable microphone access in your browser settings and reload the page.'
+      );
 
-    onDeviceError?.({
-      source: Track.Source.Microphone,
-      error,
-    });
-  },
-  [onDeviceError]
-);
+      onDeviceError?.({
+        source: Track.Source.Microphone,
+        error,
+      });
+    },
+    [onDeviceError]
+  );
 
   const handleCameraDeviceSelectError = useCallback(
     (error: Error) => onDeviceError?.({ source: Track.Source.Camera, error }),

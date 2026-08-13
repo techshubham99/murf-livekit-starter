@@ -26,9 +26,10 @@ export function getPersistentUserId() {
     return userId;
   }
 
-  userId = typeof crypto?.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `shikshamitra_user_${Math.random().toString(36).slice(2, 12)}`;
+  userId =
+    typeof crypto?.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `shikshamitra_user_${Math.random().toString(36).slice(2, 12)}`;
   window.localStorage.setItem(USER_ID_STORAGE_KEY, userId);
   return userId;
 }

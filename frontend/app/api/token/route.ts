@@ -43,12 +43,13 @@ export async function POST(req: Request) {
         { ignoreUnknownFields: true }
       );
     }
-      
+
     // Generate or reuse a stable learner identity if provided.
     const participantName = 'user';
-    const participantIdentity = typeof body?.user_id === 'string' && body.user_id.trim().length > 0
-      ? body.user_id
-      : `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
+    const participantIdentity =
+      typeof body?.user_id === 'string' && body.user_id.trim().length > 0
+        ? body.user_id
+        : `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
     const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
 
     const participantToken = await createParticipantToken(

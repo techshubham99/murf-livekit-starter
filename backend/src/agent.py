@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+import threading
 
 from dotenv import load_dotenv
 from livekit import rtc
@@ -15,18 +15,23 @@ from livekit.agents import (
     RunContext,
     cli,
     function_tool,
-    room_io,
     tokenize,
 )
 from livekit.plugins import (
     deepgram,
     google,
     murf,
-    noise_cancellation,
     silero,
 )
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
+from .call_analytics import (
+    end_call_record,
+    initialize_call_analytics_table,
+    mark_exercise_completed,
+    start_call_record,
+)
+from .dashboard import run_dashboard
 from .database import initialize_database
 from .escalation import (
     create_escalation_record,
@@ -556,17 +561,19 @@ or Hinglish. What would you like to learn today?"
 # ASSISTANT
 # ============================================================
 
-class Assistant(Agent):
 
+class Assistant(Agent):
     def __init__(
         self,
         user_id: str,
         prior_memory: str | None = None,
         outbound_call: bool = False,
+        call_id: str | None = None,
     ) -> None:
 
         self.user_id = user_id
         self.outbound_call = outbound_call
+        self.call_id = call_id
 
         # Avoid repeating exercises in the same call.
         self.used_exercise_ids: list[int] = []
@@ -594,14 +601,9 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
 """
 
         if prior_memory:
-            instructions += (
-                "\n\nRETURNING LEARNER CONTEXT:\n"
-                + prior_memory
-            )
+            instructions += "\n\nRETURNING LEARNER CONTEXT:\n" + prior_memory
 
-        super().__init__(
-            instructions=instructions
-        )
+        super().__init__(instructions=instructions)
 
     # ========================================================
     # MEMORY LOOKUP
@@ -615,21 +617,14 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
         """Look up persistent learning memory for the current learner."""
 
         try:
-            return lookup_user_memory(
-                self.user_id
-            )
+            return lookup_user_memory(self.user_id)
 
         except Exception:
-            logger.exception(
-                "Memory lookup failed"
-            )
+            logger.exception("Memory lookup failed")
 
             return {
                 "success": False,
-                "message": (
-                    "Memory is temporarily unavailable. "
-                    "Continue normally."
-                ),
+                "message": ("Memory is temporarily unavailable. Continue normally."),
             }
 
     # ========================================================
@@ -670,14 +665,9 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
             return result
 
         except Exception:
-            logger.exception(
-                "Memory save failed"
-            )
+            logger.exception("Memory save failed")
 
-            return (
-                "Memory could not be saved. "
-                "Do not claim that it was saved."
-            )
+            return "Memory could not be saved. Do not claim that it was saved."
 
     # ========================================================
     # FETCH EXERCISE
@@ -693,22 +683,14 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
         """Fetch the next suitable learning exercise."""
 
         try:
-
             # If information is missing, try learner memory.
-            if (
-                learning_level is None
-                or current_topic is None
-            ):
-
-                memory_result = lookup_user_memory(
-                    self.user_id
-                )
+            if learning_level is None or current_topic is None:
+                memory_result = lookup_user_memory(self.user_id)
 
                 if isinstance(
                     memory_result,
                     dict,
                 ):
-
                     facts = (
                         memory_result.get(
                             "facts",
@@ -718,14 +700,10 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
                     )
 
                     if learning_level is None:
-                        learning_level = facts.get(
-                            "learning_level"
-                        )
+                        learning_level = facts.get("learning_level")
 
                     if current_topic is None:
-                        current_topic = facts.get(
-                            "current_topic"
-                        )
+                        current_topic = facts.get("current_topic")
 
             # Defaults
             if not learning_level:
@@ -740,40 +718,25 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
                 self.used_exercise_ids,
             )
 
-            if (
-                result.get("success")
-                and result.get("exercise")
-            ):
-
-                exercise_id = result[
-                    "exercise"
-                ].get("id")
+            if result.get("success") and result.get("exercise"):
+                exercise_id = result["exercise"].get("id")
 
                 if (
                     exercise_id is not None
-                    and exercise_id
-                    not in self.used_exercise_ids
+                    and exercise_id not in self.used_exercise_ids
                 ):
-
-                    self.used_exercise_ids.append(
-                        exercise_id
-                    )
+                    self.used_exercise_ids.append(exercise_id)
 
             return result
 
         except Exception:
-
-            logger.exception(
-                "Exercise fetch failed"
-            )
+            logger.exception("Exercise fetch failed")
 
             return {
                 "success": False,
                 "error": "tool_failure",
                 "message": (
-                    "I couldn't fetch a practice "
-                    "question right now. "
-                    "Let's try again."
+                    "I couldn't fetch a practice question right now. Let's try again."
                 ),
             }
 
@@ -795,7 +758,6 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
         """
 
         try:
-
             result = score_and_record_answer(
                 session_id=self.user_id,
                 question=question,
@@ -803,21 +765,20 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
                 learner_answer=learner_answer,
             )
 
+            if result.get("correct") and self.call_id:
+                mark_exercise_completed(self.call_id)
+
             return result
 
         except Exception:
-
-            logger.exception(
-                "Answer scoring failed"
-            )
+            logger.exception("Answer scoring failed")
 
             return {
                 "success": False,
                 "score": 0.0,
                 "correct": False,
                 "feedback": (
-                    "I couldn't score that answer "
-                    "right now. Let's try again."
+                    "I couldn't score that answer right now. Let's try again."
                 ),
             }
 
@@ -833,25 +794,16 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
         """Return the learner's current score for this session."""
 
         try:
-
-            result = format_session_score(
-                self.user_id
-            )
+            result = format_session_score(self.user_id)
 
             return result
 
         except Exception:
-
-            logger.exception(
-                "Score lookup failed"
-            )
+            logger.exception("Score lookup failed")
 
             return {
                 "success": False,
-                "message": (
-                    "I couldn't calculate your score "
-                    "right now."
-                ),
+                "message": ("I couldn't calculate your score right now."),
             }
 
     # ========================================================
@@ -924,16 +876,12 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
                     )
                     logger.info("[ESCALATION] Dashboard persistence successful")
             else:
-                logger.warning(
-                    "[ESCALATION] Failed to create request"
-                )
+                logger.warning("[ESCALATION] Failed to create request")
 
             return result
 
         except Exception:
-            logger.exception(
-                "[ESCALATION] Escalation creation failed"
-            )
+            logger.exception("[ESCALATION] Escalation creation failed")
             return {
                 "success": False,
                 "message": (
@@ -955,14 +903,19 @@ server = AgentServer()
 # PREWARM
 # ============================================================
 
+
 def prewarm(proc: JobProcess):
 
     initialize_database()
     initialize_escalation_table()
+    initialize_call_analytics_table()
 
-    proc.userdata["vad"] = (
-        silero.VAD.load()
-    )
+    # Auto-start dashboard server (port 8765) in background thread
+    dashboard_thread = threading.Thread(target=run_dashboard, daemon=True)
+    dashboard_thread.start()
+    logger.info("Dashboard server thread launched on port 8765")
+
+    proc.userdata["vad"] = silero.VAD.load()
 
 
 server.setup_fnc = prewarm
@@ -972,9 +925,8 @@ server.setup_fnc = prewarm
 # AGENT SESSION
 # ============================================================
 
-@server.rtc_session(
-    agent_name="my-agent"
-)
+
+@server.rtc_session(agent_name="my-agent")
 async def my_agent(
     ctx: JobContext,
 ):
@@ -991,9 +943,7 @@ async def my_agent(
 
     if ctx.job.metadata:
         try:
-            dial_info = json.loads(
-                ctx.job.metadata
-            )
+            dial_info = json.loads(ctx.job.metadata)
             if not isinstance(
                 dial_info,
                 dict,
@@ -1005,9 +955,7 @@ async def my_agent(
                 ctx.job.metadata,
             )
 
-    is_outbound = dial_info.get(
-        "outbound", False
-    ) or bool(
+    is_outbound = dial_info.get("outbound", False) or bool(
         dial_info.get("phone_number")
     )
 
@@ -1028,9 +976,7 @@ async def my_agent(
     # --------------------------------------------------------
 
     try:
-        participant = (
-            await ctx.wait_for_participant()
-        )
+        participant = await ctx.wait_for_participant()
     except Exception as e:
         logger.warning(
             "LOG Outcome: No answer / Busy / Participant failed to join: %s",
@@ -1040,6 +986,12 @@ async def my_agent(
         return
 
     learner_id = participant.identity
+    call_id = ctx.room.name
+    channel = (
+        "sip"
+        if (is_outbound or participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP)
+        else "browser"
+    )
 
     if participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP:
         is_outbound = True
@@ -1053,6 +1005,9 @@ async def my_agent(
             learner_id,
         )
 
+    # Record call start in SQLite analytics
+    start_call_record(call_id=call_id, learner_id=learner_id, channel=channel)
+
     # Disconnect listener for call outcome tracking
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(p: rtc.RemoteParticipant):
@@ -1060,14 +1015,13 @@ async def my_agent(
             "LOG Outcome: CALL DISCONNECTED - Participant %s left room",
             p.identity,
         )
+        end_call_record(call_id)
 
     # --------------------------------------------------------
     # Start a fresh score for this call
     # --------------------------------------------------------
 
-    start_score_session(
-        learner_id
-    )
+    start_score_session(learner_id)
 
     # --------------------------------------------------------
     # Load persistent memory
@@ -1076,16 +1030,12 @@ async def my_agent(
     prior_memory = None
 
     try:
-
-        memory_record = lookup_user_memory(
-            learner_id
-        )
+        memory_record = lookup_user_memory(learner_id)
 
         if isinstance(
             memory_record,
             dict,
         ):
-
             facts = (
                 memory_record.get(
                     "facts",
@@ -1094,47 +1044,29 @@ async def my_agent(
                 or {}
             )
 
-            name = memory_record.get(
-                "name"
-            )
+            name = memory_record.get("name")
 
-            language = memory_record.get(
-                "language_preference"
-            )
+            language = memory_record.get("language_preference")
 
-            level = facts.get(
-                "learning_level"
-            )
+            level = facts.get("learning_level")
 
-            topic = facts.get(
-                "current_topic"
-            )
+            topic = facts.get("current_topic")
 
-            topics = facts.get(
-                "topics_covered"
-            )
+            topics = facts.get("topics_covered")
 
             memory_lines = []
 
             if name:
-                memory_lines.append(
-                    f"Learner name: {name}"
-                )
+                memory_lines.append(f"Learner name: {name}")
 
             if language:
-                memory_lines.append(
-                    f"Preferred language: {language}"
-                )
+                memory_lines.append(f"Preferred language: {language}")
 
             if level:
-                memory_lines.append(
-                    f"Learning level: {level}"
-                )
+                memory_lines.append(f"Learning level: {level}")
 
             if topic:
-                memory_lines.append(
-                    f"Current topic: {topic}"
-                )
+                memory_lines.append(f"Current topic: {topic}")
 
             if (
                 isinstance(
@@ -1143,31 +1075,19 @@ async def my_agent(
                 )
                 and topics
             ):
-
                 memory_lines.append(
-                    "Topics covered: "
-                    + ", ".join(
-                        str(item)
-                        for item in topics
-                    )
+                    "Topics covered: " + ", ".join(str(item) for item in topics)
                 )
 
             if memory_lines:
-
                 prior_memory = (
                     "The learner has previous "
                     "learning memory. Use it naturally "
-                    "without exposing technical details.\n"
-                    + "\n".join(
-                        memory_lines
-                    )
+                    "without exposing technical details.\n" + "\n".join(memory_lines)
                 )
 
     except Exception:
-
-        logger.exception(
-            "Failed to load learner memory"
-        )
+        logger.exception("Failed to load learner memory")
 
     # --------------------------------------------------------
     # Create assistant
@@ -1177,6 +1097,7 @@ async def my_agent(
         user_id=learner_id,
         prior_memory=prior_memory,
         outbound_call=is_outbound,
+        call_id=call_id,
     )
 
     # --------------------------------------------------------
@@ -1188,34 +1109,26 @@ async def my_agent(
     )
 
     session = AgentSession(
-
         # Speech-to-text (Nova-3 multilingual)
         stt=deepgram.STT(
             model="nova-3",
             language="multi",
         ),
-
         # LLM
         llm=google.LLM(
             model="gemini-3.5-flash-lite",
         ),
-
         # Murf Falcon
         tts=murf.TTS(
             voice="Anisha",
             style="Conversation",
-            tokenizer=tokenize.basic.SentenceTokenizer(
-                min_sentence_len=2
-            ),
+            tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
             text_pacing=True,
         ),
-
         # Multilingual turn detection
         turn_detection=MultilingualModel(),
-
         # Voice activity detection
         vad=ctx.proc.userdata["vad"],
-
         # Generate responses early
         preemptive_generation=True,
     )
@@ -1301,19 +1214,14 @@ async def my_agent(
         room=ctx.room,
     )
 
-    logger.info(
-        "LOG Stage 4: AgentSession started successfully"
-    )
+    logger.info("LOG Stage 4: AgentSession started successfully")
 
     # --------------------------------------------------------
     # GREETING DISPATCH
     # --------------------------------------------------------
 
     if is_outbound:
-
-        logger.info(
-            "LOG Stage 5: Greeting generation started (Outbound mode)"
-        )
+        logger.info("LOG Stage 5: Greeting generation started (Outbound mode)")
 
         await session.generate_reply(
             instructions=(
@@ -1322,15 +1230,10 @@ async def my_agent(
             )
         )
 
-        logger.info(
-            "LOG Stage 6: Outbound greeting completed"
-        )
-        logger.info(
-            "LOG Stage 7: Waiting for learner response..."
-        )
+        logger.info("LOG Stage 6: Outbound greeting completed")
+        logger.info("LOG Stage 7: Waiting for learner response...")
 
     else:
-
         # Normal browser/inbound greeting
         await session.generate_reply(
             instructions=(

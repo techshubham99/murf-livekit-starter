@@ -181,21 +181,21 @@ export function AgentSessionView_01({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
   const getStatusText = () => {
-  switch (agentState) {
-    case "connecting":
-      return "🔄 Connecting to ShikshaMitra AI...";
-    case "listening":
-      return "🎤 Listening...";
-    case "thinking":
-      return "🤔 Thinking...";
-    case "speaking":
-      return "📚 Explaining your lesson...";
-    case "disconnected":
-      return "❌ Call Ended";
-    default:
-      return "✅ Ready to Learn";
-  }
-};
+    switch (agentState) {
+      case 'connecting':
+        return '🔄 Connecting to ShikshaMitra AI...';
+      case 'listening':
+        return '🎤 Listening...';
+      case 'thinking':
+        return '🤔 Thinking...';
+      case 'speaking':
+        return '📚 Explaining your lesson...';
+      case 'disconnected':
+        return '❌ Call Ended';
+      default:
+        return '✅ Ready to Learn';
+    }
+  };
 
   const controls: AgentControlBarControls = {
     leave: true,
@@ -239,11 +239,11 @@ export function AgentSessionView_01({
           )}
         </AnimatePresence>
       </div>
-      <div className="absolute top-36 left-1/2 -translate-x-1/2 z-50">
-  <div className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg">
-    {getStatusText()}
-  </div>
-</div>
+      <div className="absolute top-36 left-1/2 z-50 -translate-x-1/2">
+        <div className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-lg">
+          {getStatusText()}
+        </div>
+      </div>
       {/* Tile layout */}
       <TileLayout
         chatOpen={chatOpen}

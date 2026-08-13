@@ -4,10 +4,7 @@ import path from 'path';
 
 export const revalidate = 0;
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ refId: string }> }
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ refId: string }> }) {
   const { refId } = await params;
   const body = await req.json();
   const newStatus = body.status || 'OPEN';
@@ -31,7 +28,9 @@ export async function POST(
     const cmd = `uv run python src/query_escalations.py update "${refId}" "${newStatus}"`;
     const stdout = execSync(cmd, { cwd: backendDir, encoding: 'utf-8' });
     const data = JSON.parse(stdout);
-    return NextResponse.json(data.success ? data : { success: true, reference_id: refId, status: newStatus });
+    return NextResponse.json(
+      data.success ? data : { success: true, reference_id: refId, status: newStatus }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
   }
