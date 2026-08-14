@@ -25,25 +25,48 @@ from livekit.plugins import (
 )
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
-from .call_analytics import (
-    end_call_record,
-    initialize_call_analytics_table,
-    mark_exercise_completed,
-    start_call_record,
-)
-from .dashboard import run_dashboard
-from .database import initialize_database
-from .escalation import (
-    create_escalation_record,
-    initialize_escalation_table,
-)
-from .memory import lookup_user_memory, save_user_memory
-from .tools import (
-    find_next_exercise,
-    format_session_score,
-    score_and_record_answer,
-    start_score_session,
-)
+try:
+    from .call_analytics import (
+        end_call_record,
+        initialize_call_analytics_table,
+        mark_exercise_completed,
+        start_call_record,
+    )
+    from .dashboard import run_dashboard
+    from .database import initialize_database
+    from .escalation import (
+        create_escalation_record,
+        initialize_escalation_table,
+    )
+    from .maths_agent import MathsPracticeAgent
+    from .memory import lookup_user_memory, save_user_memory
+    from .tools import (
+        find_next_exercise,
+        format_session_score,
+        score_and_record_answer,
+        start_score_session,
+    )
+except ImportError:
+    from src.call_analytics import (
+        end_call_record,
+        initialize_call_analytics_table,
+        mark_exercise_completed,
+        start_call_record,
+    )
+    from src.dashboard import run_dashboard
+    from src.database import initialize_database
+    from src.escalation import (
+        create_escalation_record,
+        initialize_escalation_table,
+    )
+    from src.maths_agent import MathsPracticeAgent
+    from src.memory import lookup_user_memory, save_user_memory
+    from src.tools import (
+        find_next_exercise,
+        format_session_score,
+        score_and_record_answer,
+        start_score_session,
+    )
 
 logger = logging.getLogger("agent")
 
@@ -375,7 +398,7 @@ Teach like a friendly personal teacher.
 
 For voice conversations:
 
-- Keep replies around 2–4 short sentences.
+- Keep replies around 2-4 short sentences.
 - Avoid long paragraphs.
 - Sound natural.
 - Do not sound like a textbook.
@@ -543,6 +566,33 @@ request. Let me continue helping you here."
 
 
 ============================================================
+DAY 9 — MATHS PRACTICE SPECIALIST HANDOFF
+============================================================
+
+You have a dedicated Maths Practice Specialist (`MathsPracticeAgent`)
+for interactive, step-by-step Mathematics practice.
+
+WHEN TO HANDOFF:
+When the learner specifically requests:
+- Maths practice ("Mujhe maths practice karni hai", "Maths practice karwao")
+- Maths quiz, test, or exercises ("Mera maths test lo", "Take my maths test")
+- Specific topic practice ("Mujhe percentage ke questions practice karne hain", "Algebra ke 5 questions do")
+- Practice in fractions, decimals, percentages, ratios, algebra, arithmetic, geometry, word problems.
+
+WHEN NOT TO HANDOFF:
+- Simple factual single calculation questions that you can answer directly in 1 short sentence (e.g. "2 + 2 kitna hota hai?" -> "2 + 2 = 4 होता है।")
+- General questions about what a concept means if practice was not requested.
+- Other subjects (Computer Science, Python, Science, English, GK) MUST stay with you and NEVER hand off to Maths Specialist.
+
+HOW TO ANNOUNCE AND HANDOFF:
+1. Announce the handoff briefly and naturally in the learner's language:
+   - Hindi/Hinglish: "ज़रूर! Maths की practice के लिए मैं आपको अपने Maths Practice Specialist से connect करता हूँ।"
+   - English: "Sure! For Maths practice, I am connecting you with our Maths Practice Specialist."
+2. Call the tool `handoff_to_maths_specialist` with `topic` (e.g. "percentage", "fractions", "algebra", "arithmetic", "geometry") and `specific_request`.
+3. Do NOT make the announcement long.
+
+
+============================================================
 FIRST GREETING
 ============================================================
 
@@ -565,7 +615,7 @@ or Hinglish. What would you like to learn today?"
 class Assistant(Agent):
     def __init__(
         self,
-        user_id: str,
+        user_id: str = "anonymous",
         prior_memory: str | None = None,
         outbound_call: bool = False,
         call_id: str | None = None,
@@ -888,6 +938,75 @@ Politely say: "No problem. I won't keep you. Have a great day!" and gracefully e
                     "I couldn't create the teacher help "
                     "request right now. Let me try to "
                     "help you myself."
+                ),
+            }
+
+    # ========================================================
+    # HANDOFF TO MATHS SPECIALIST — DAY 9
+    # ========================================================
+
+    @function_tool
+    async def handoff_to_maths_specialist(
+        self,
+        context: RunContext,
+        topic: str = "Mathematics",
+        specific_request: str = "",
+        learning_level: str = "beginner",
+    ):
+        """
+        Hand off the conversation to the dedicated Maths Practice Specialist (MathsPracticeAgent).
+
+        Call this tool when the learner requests:
+        - Maths practice (e.g., "Mujhe maths practice karni hai", "Percentage ke questions practice karwao")
+        - Maths quiz or test (e.g., "Mera maths test lo", "Take my maths test")
+        - Maths exercises / solving multiple Maths questions (e.g., "Mujhe fractions ke 5 questions do")
+        - Step-by-step practice for topics like percentages, fractions, decimals, algebra, arithmetic, geometry.
+
+        DO NOT call this tool for:
+        - Simple factual single calculation questions (e.g., "2 + 2 kitna hota hai?") that can be answered directly.
+        - Non-Maths subjects (Python, Computer Science, Science, English, GK).
+
+        Parameters:
+            topic: Specific mathematics topic (e.g., "percentage", "fractions", "algebra", "arithmetic", "geometry").
+            specific_request: The specific request or problem stated by the learner.
+            learning_level: "beginner", "intermediate", or "advanced".
+        """
+        logger.info(
+            "[HANDOFF] Transferring to Maths Practice Specialist. Topic='%s', Request='%s', Level='%s'",
+            topic,
+            specific_request,
+            learning_level,
+        )
+
+        try:
+            maths_agent = MathsPracticeAgent(
+                user_id=self.user_id,
+                topic=topic,
+                initial_context=specific_request or topic,
+                learning_level=learning_level,
+                call_id=self.call_id,
+            )
+
+            # Perform real LiveKit Agent handoff
+            self.session.update_agent(maths_agent)
+
+            return {
+                "success": True,
+                "status": "HANDOFF_COMPLETED",
+                "topic": topic,
+                "message": (
+                    f"Successfully connected to Maths Practice Specialist for {topic}."
+                ),
+            }
+        except Exception as exc:
+            logger.exception("[HANDOFF] Failed to transfer to Maths Specialist: %s", exc)
+            return {
+                "success": False,
+                "status": "HANDOFF_FAILED",
+                "error": str(exc),
+                "message": (
+                    "माफ़ कीजिए, Maths specialist अभी उपलब्ध नहीं है। "
+                    "मैं आपके साथ Maths की मदद जारी रख सकता हूँ।"
                 ),
             }
 
