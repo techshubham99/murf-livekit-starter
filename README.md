@@ -1,3 +1,50 @@
+# 🎙️ ShikshaMitra AI
+
+### Learn • Understand • Grow
+
+**ShikshaMitra AI** is a real-time, voice-first AI learning assistant built for the **Learning & Literacy track** of the **10 Days of Voice Agents — VoiceForBharat Edition**.
+
+It helps learners learn, practice, ask questions, receive feedback, get human support when required, and practice specialized subjects through natural voice conversations.
+
+> 🎯 **Vision:** Turn passive learning into active confidence through natural voice conversations.
+
+---
+
+## 🌟 Project Overview
+
+Traditional learning often focuses on reading, writing, memorization, and watching lectures. However, learners may not get enough opportunities to **speak, practice, ask questions naturally, and receive immediate feedback**.
+
+ShikshaMitra AI addresses this gap by providing an always-available voice learning companion.
+
+A learner can simply speak with the agent in:
+
+- 🇮🇳 Hindi
+- 🇬🇧 English
+- 🔀 Hinglish / code-mixed conversations
+
+The system can understand the learner, reason using an LLM, use learning tools, remember useful context, provide voice responses using **Murf Falcon**, escalate to a human when necessary, and hand off specialized conversations to dedicated agents.
+
+---
+
+# 🎯 Problem Statement
+
+Many learners understand concepts but lack confidence in applying them through real conversations.
+
+### Traditional learning
+
+text
+Textbooks
+   ↓
+Reading
+   ↓
+Memorization
+   ↓
+Written Practice
+   ↓
+Limited Speaking Practice
+   ↓
+Hesitation / Lack of Confidence
+
 # Voice Agent Starter — Powered by Murf Falcon
 
 Build a production voice AI agent in 5 minutes. Powered by the fastest TTS on the market - swap the system prompt to build anything from customer support to language tutors.
